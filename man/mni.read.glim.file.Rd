@@ -6,13 +6,15 @@
   is a simple space separated text file.
 }
 \usage{
-glim.matrix <- mni.read.glim.file(filename, header=FALSE, fill=FALSE)
+glim.matrix <- mni.read.glim.file(filename, header=FALSE, fill=FALSE,
+file.type="space") 
 }
 \arguments{
   \item{filename}{The filename of the file containing the matrix.}
   \item{header}{Whether the first row of the matrix contains header
     information.}
   \item{fill}{Whether to allow for missing values or not.}
+  \item{file.type}{Either "space" or "csv".}
 }
 \details{
   There are two key ways to control a run of cortical analysis:
@@ -23,7 +25,9 @@ glim.matrix <- mni.read.glim.file(filename, header=FALSE, fill=FALSE)
   subsequent columns are independent variables. Names of factors are
   allowed, as are missing values if the fill options is set to TRUE. The
   first line can also optionally be a header, set the header option to
-  TRUE if that is the case. 
+  TRUE if that is the case. The different columns are separated by
+  either a spaces or commas - space is the default, specify
+  file.type="csv" if the file has comma separated values.
 }
 \value{If there is a header, the returned data
   frame will take the name assigned by the header. If there is no
