@@ -200,7 +200,7 @@ mni.vertex.mixed.model.compare.models <- function(glim.matrix,
   # for debugging only
   #number.vertices <- 10
 
-  #attach(glim.matrix)
+  attach(glim.matrix)
   
   results <- list(l.ratio = vector(length=number.vertices),
                   p.value = vector(length=number.vertices))
