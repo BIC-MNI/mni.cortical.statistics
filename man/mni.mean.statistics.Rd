@@ -20,6 +20,7 @@ mni.mean.statistics(glim.matrix, statistics.model, vertex.table=FALSE)
     as FALSE, in which case the vertex table will be built from the glim
     matrix specified as the first argument.}
 }
+
 \keyword{regression}
 \seealso{
   \code{\link{mni.read.glim.file}}.

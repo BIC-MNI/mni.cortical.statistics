@@ -125,12 +125,12 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
   }
 
   #number.vertices <- 500
-
+  
   # attach the named variables
   attach(glim.matrix)
 
   # get the number of terms in the formula
-  # run on lm to determine all the required info
+  # run one lm to determine all the required info
   y <- vertex.table[1,]
   l <- lm(formula(statistics.model))
   s <- summary(l)
@@ -149,12 +149,15 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
                   std.error = data.frame(matrix(NA, nrow = number.vertices,
                     ncol = number.terms)),
                   tstatistic = data.frame(matrix(NA, nrow = number.vertices,
+                    ncol = number.terms)),
+                  q.values = data.frame(matrix(NA, nrow = number.vertices,
                     ncol = number.terms)))
 
   # assign the correct names
   names(results$slope) <- variable.names
   names(results$std.error) <- variable.names
   names(results$tstatistic) <- variable.names
+  names(results$q.values) <- variable.names
 
   modulo <- 1000
   f <- formula(statistics.model)
@@ -172,12 +175,22 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
       results$std.error[i,j] <- s$coefficients[j,2]
       results$tstatistic[i,j] <- s$coefficients[j,3]
     }
+    # print progress report to the terminal
     if (i %% modulo == 0) {
       cat(format((i/number.vertices)*100, digits=3))
       cat("%  ")
     }
   }
   cat("\n")
+
+  # compute the q values for all of the corresponding t-stats
+  cat("   Computing q values\n")
+  for (i in 1:number.terms) {
+    q <- mni.compute.FDR(t.stats=results$tstatistic[,i],
+                         df=number.subjects-1)
+    results$q.values[,i] <- q$q
+  }
+  
   return(results)
 
 }
@@ -221,6 +234,32 @@ mni.write.vertex.stats <- function(vertex.stats, filename, headers = TRUE,
 }
   
 
-
+mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, df=Inf, fdr=0.05,
+                            plot.fdr=FALSE) {
+  # argument handling: must have either t.stats or p.values
+  if (is.null(t.stats) && is.null(p.values)) {
+    stop("Either t.stats or p.values have to be specified")
+  }
+  if (is.null(p.values)) {
+    # compute the p-values from the t-stats
+    p.values <- abs(pt(abs(t.stats), df) - 1)
+  }
+  # sort the p-values
+  sorted.p.values <- sort(p.values, index.return = TRUE)
+  # compute the q stats
+  q <- sorted.p.values$x / 1:length(p.values) * length(p.values)
+  if (plot.fdr == TRUE) {
+    plot(1:length(p.values)/length(p.values), sorted.p.values$x)
+    abline(0, fdr, col="red")
+  }
+  # find the threshold
+  q2 <- q <= fdr
+  r <- sort(q2, decreasing = TRUE, index.return = TRUE)
+  fdr.threshold <- qt(sorted.p.values$x[max(r$ix[r$x == TRUE])], df)
+  # sort the q values to be in the same order as the t.stats passed in
+  q[sorted.p.values$ix] <- q
+  # return threshold and q values.
+  return(fdr.threshold, q)
+}
   
   

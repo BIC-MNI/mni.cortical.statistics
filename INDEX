@@ -1,5 +1,14 @@
+mni.build.data.table    Load all vertices from a glim matrix
+mni.compute.FDR         Compute the q value at every vertex
 mni.mean.statistics     Run a linear model on the average of a series
                         of cortical stats files
 mni.read.glim.file      Read Linear Model Matrix Text File
+mni.vertex.compare.models
+                        An ANOVA comparing two models at each vertex
+mni.vertex.power.analysis
+                        Compute the statistical power at every vertex
 mni.vertex.statistics   Run a linear model at every vertex of a series
                         of cortical stats files
+mni.write.vertex.stats
+                        Write the output of a vertex statistics run to
+                        file

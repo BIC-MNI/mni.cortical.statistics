@@ -14,6 +14,20 @@ glim.matrix <- mni.read.glim.file(filename, header=FALSE, fill=FALSE)
     information.}
   \item{fill}{Whether to allow for missing values or not.}
 }
+\details{
+  There are two key ways to control a run of cortical analysis:
+  specification of the input data and specification of the formula. The
+  input data, read by this function, is prepared as a simple text file
+  with one line per subject, and one column per variable. The first
+  column is a filename containing the vertstats information, all
+  subsequent columns are independent variables. Names of factors are
+  allowed, as are missing values if the fill options is set to TRUE. The
+  first line can also optionally be a header, set the header option to
+  TRUE if that is the case. 
+}
+\value{If there is a header, the returned data
+  frame will take the name assigned by the header. If there is no
+  header, the column names will be V1, V2, V3 and so forth.}
 \keyword{file}
 \keyword{regression}
 \seealso{
