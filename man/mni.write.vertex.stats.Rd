@@ -8,7 +8,7 @@
 }
 \usage{
 mni.write.vertex.stats(vertex.stats, "filename", headers=TRUE,
-mean.stats=ms, glim.matrix=gm)
+mean.stats=NULL, glim.matrix=NULL)
 }
 \arguments{
   \item{vertex.stats}{The results from mni.vertex.statistics}
