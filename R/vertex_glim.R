@@ -187,8 +187,8 @@ mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
   return(results)
 }
 
-mni.vertex.mixed.model.anova <- function(glim.matrix, fixed.effect, random.effect,
-                                   vertex.table=FALSE) {
+mni.vertex.mixed.model.anova <- function(glim.matrix, fixed.effect,
+                                         random.effect, vertex.table=FALSE) {
   # build the table to hold all of the values - unless they are given as
   # an argument
   if (mode(vertex.table) == "logical") {
@@ -293,6 +293,89 @@ mni.vertex.anova <- function(glim.matrix, statistics.model=NA,
   return(results)
 }
 
+# get the residuals of a linear model
+mni.vertex.residuals <- function(glim.matrix, statistics.model, vertex.table) {
+
+  number.vertices <- nrow(vertex.table)
+  new.dt <- vertex.table
+  attach(glim.matrix)
+  modulo <- 1000
+  # run the stats at each vertex
+  cat("   Percent done: ")
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+    l <- lm(formula(statistics.model))
+    new.dt[i,] <- residuals(l)
+    # print progress report to the terminal
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+
+  detach(glim.matrix)
+
+  return(new.dt)
+}
+
+# trace anatomical connectivity using several hops
+mni.anatcon.trace <- function(data.table, y, cortex, hops=3, min.distance=40,
+                              min.value=0.6) {
+
+  filename.cor <- "/tmp/cor.vertstats"
+  filename.peaks <- "/tmp/peaks.csv"
+  
+  cor1 <- mni.vertex.correlation(data.table, y)
+  mni.write.vertex.stats(cor1, filename.cor);
+  system(paste("vertstats_find_peaks -min_value", min.value,
+               "-min_distance", min.distance, filename.cor,
+               cortex, filename.peaks))
+  peaks <- read.csv(filename.peaks, header=TRUE)
+
+  cors <- matrix(ncol=length(peaks$vertex), nrow=length(cor1))
+  for (i in 1:length(peaks$vertex)) {
+    cat(paste("Correlating peak:", i, "\n"))
+    cors[,i] <- mni.vertex.correlation(data.table, dt[peaks$vertex[i]+1,])
+  }
+
+  m <- apply(cors, 1, max)
+  output <- ((cor1 > min.value) * 2) + ( m > min.value)
+  
+  return(output)
+}
+
+# get the strength of cross cortex correlations at every vertex
+mni.vertex.correlation.strength <- function(data.table) {
+  number.vertices <- nrow(data.table)
+
+  modulo <- 10
+  results <- vector(length=number.vertices)
+  for (i in 1:number.vertices) {
+    c <- mni.vertex.correlation(data.table, data.table[i,])
+    results[i] <- sum(c)
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+  return(results)
+}
+
+# correlate every vertex with variable y
+mni.vertex.correlation <- function(data.table, y) {
+
+  number.subjects <- ncol(data.table)
+  number.vertices <- nrow(data.table)
+
+  results <- vector(length=number.vertices)
+
+  for (i in 1:number.vertices) {
+    results[i] <- cor(data.table[i,], y)
+  }
+  return(results)
+}
 
 # run stats at every vertex
 mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,

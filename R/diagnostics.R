@@ -32,9 +32,15 @@ mni.diagnostic.capabilities.of.vertices <- function(data.table, true.diagnosis, 
   number.cases <- length(true.diagnosis)
   number.vertices <- nrow(data.table)
   results <- matrix(NA, ncol=number.cases, nrow=number.vertices)
+  modula <- 0
   for (i in 1:number.vertices) {
     try(results[i,] <- mni.leave.one.out.diagnosis(data.table[i,], true.diagnosis, method=method))
-    print(i)
+
+    tmp <- i %/% 1000
+    if (tmp > modula) {
+      print((i / number.vertices) * 100)
+      modula <- tmp
+    }
   }
   return(results)
 }
@@ -46,6 +52,7 @@ mni.vertex.sensitivity <- function(diagnostic.results, true.diagnosis) {
                   ppv = vector(length=number.vertices),
                   npv = vector(length=number.vertices),
                   accuracy = vector(length=number.vertices))
+  modula <- 0
   for (i in 1:number.vertices) {
     t <- try(as.data.frame(table(diagnostic.results[i,], true.diagnosis)))
     if (!inherits(t, "try-error")) {
@@ -55,7 +62,11 @@ mni.vertex.sensitivity <- function(diagnostic.results, true.diagnosis) {
       results$npv[i] <- t[1,3] / (t[1,3] + t[3,3])
       results$accuracy[i] <- (t[4,3] + t[1,3]) / (t[1,3] + t[2,3] + t[3,3] + t[4,3])
     }
-    print(i)
+    tmp <- i %/% 1000
+    if (tmp > modula) {
+      print((i / number.vertices) * 100)
+      modula <- tmp
+    }
   }
   return(results)
 }
