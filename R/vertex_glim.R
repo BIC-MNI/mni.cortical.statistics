@@ -377,6 +377,69 @@ mni.vertex.correlation <- function(data.table, y) {
   return(results)
 }
 
+mni.vertex.var.test <- function(glim.matrix, statistics.model, subset1,
+                               subset2, vertex.table) {
+
+  number.subjects <- nrow(glim.matrix)
+  number.vertices <- nrow(vertex.table)
+  variance.ratio <- vector(length=number.vertices)
+  f.stat <- vector(length=number.vertices)
+  p.value <- vector(length=number.vertices)
+
+  attach(glim.matrix)
+  modulo <- 1000
+
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+    l1 <- lm(formula(statistics.model), glim.matrix, subset=subset1)
+    l2 <- lm(formula(statistics.model), glim.matrix, subset=subset2)
+    v <- var.test(l1, l2)
+    variance.ratio[i] <- v$estimate
+    f.stat[i] <- v$statistic
+    p.value[i] <- v$p.value
+    # print progress report to the terminal
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+  detach(glim.matrix)
+  return(data.frame(f.stat, variance.ratio, p.value))
+}
+
+mni.vertex.mood.test <- function(glim.matrix, statistics.model, subset1,
+                                 subset2, vertex.table) {
+
+  number.subjects <- nrow(glim.matrix)
+  number.vertices <- nrow(vertex.table)
+  #variance.ratio <- vector(length=number.vertices)
+  z.stat <- vector(length=number.vertices)
+  p.value <- vector(length=number.vertices)
+
+  attach(glim.matrix)
+  modulo <- 1000
+
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+    l1 <- lm(formula(statistics.model), glim.matrix, subset=subset1)
+    l2 <- lm(formula(statistics.model), glim.matrix, subset=subset2)
+    v <- mood.test(residuals(l1), residuals(l2))
+    #variance.ratio[i] <- v$estimate
+    z.stat[i] <- v$statistic
+    p.value[i] <- v$p.value
+    # print progress report to the terminal
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+  detach(glim.matrix)
+  return(data.frame(z.stat,p.value))
+}
+
+
 # run stats at every vertex
 mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
                                   vertex.table=FALSE) {

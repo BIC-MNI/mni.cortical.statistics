@@ -83,9 +83,10 @@ mni.stepwise.diagnostics <- function(diagnostic.results, true.diagnosis,
   while (i < max.steps && perfect == FALSE) {
     #l <- lda(t(data.table[sorted$ix[1:i],]), true.diagnosis)
     #pl <- predict(l, t(data.table[sorted$ix[1:i],]))
-    diagnosis <- mni.leave.one.out.diagnosis(t(data.table[sorted$ix[1:i],]),
-                                               true.diagnosis)
-    results <- as.data.frame(table(diagnosis, true.diagnosis))
+    #diagnosis <- mni.leave.one.out.diagnosis(t(data.table[sorted$ix[1:i],]),
+    #true.diagnosis)
+    diagnosis <- qda(t(as.matrix(data.table[sorted$ix[1:i],])), true.diagnosis, CV=T)
+    results <- as.data.frame(table(diagnosis$class, true.diagnosis))
     if (results[2,3] == 0 && results[3,3] == 0) {
       perfect <- TRUE
     }
@@ -184,8 +185,10 @@ simulate.discriminant <- function(group.means, group.sds, group.ns,
 }
 
 discriminate.on.areas <- function(data.table, animal.table, truth,
-                                  method="lda") {
-  areas <- unique(animal.table)
+                                  method="lda", areas=NULL) {
+  if (is.null(areas)) {
+    areas <- unique(animal.table)
+  }
   num.areas <- length(areas)
 
   results <- list(area = vector(length=num.areas),
@@ -198,7 +201,7 @@ discriminate.on.areas <- function(data.table, animal.table, truth,
     if (sum(animal.table == areas[i]) > 1) {
       d <- mni.leave.one.out.diagnosis(colMeans(data.table[animal.table == areas[i],]),
                                        truth, method=method)
-      r <- mni.vertex.sensitivity(t(d), truth)
+      r <- mni.vertex.sensitivity(t(as.matrix(d)), truth)
       
       results$accuracy[i] <- r$accuracy
       results$sensitivity[i] <- r$sensitivity
@@ -209,9 +212,11 @@ discriminate.on.areas <- function(data.table, animal.table, truth,
 }
 
 discriminate.two.areas <- function(data.table, animal.table, truth,
-                                   method="lda") {
-  areas <- unique(animal.table)
-  combo <- expand.grid(areas, areas)
+                                   method="lda", areas=NULL) {
+  if (is.null(areas)) {
+    areas <- unique(animal.table)
+  }
+  combo <- expand.grid.jpl(areas, areas)
   num.combo <- nrow(combo)
 
   results <- list(area1 = vector(length=num.combo),
@@ -249,4 +254,29 @@ discriminate.two.areas <- function(data.table, animal.table, truth,
     
 }
   
+# like the standard function expand.grid, except that no duplicates
+# are allowed
+expand.grid.jpl <- function(x,y) {
+  # do the standard full expansion
+  grid <- expand.grid(x,y)
+
+  # remove identical elements, e.g. c(2,2)
+  w <- which(grid[,1] == grid[,2])
+  if (length(w) > 0) {
+    grid[w,] <- NA
+  }
   
+  # now remove duplicates, e.g. c(3,4) and c(4,3) are considered duplicates
+  for (i in 1:length(x)) {
+    for (j in 1:length(y)) {
+      w <- which(rowSums(cbind(grid[,1] == x[i], grid[,2] == y[j])) == 2 |
+                 rowSums(cbind(grid[,1] == y[j], grid[,2] == x[i])) == 2)
+      if (length(w) > 1) {
+        grid[w[-1],] <- NA
+      }
+    }
+  }
+  return(na.omit(grid))
+}
+      
+             
