@@ -213,12 +213,18 @@ mni.vertex.mixed.model.compare.models <- function(glim.matrix,
     model.two <- formula(model.two)
     r.effect <- formula(random.effect)
 
-    lm.one <- lme(model.one, random=r.effect, method="ML")
-    lm.two <- lme(model.two, random=r.effect, method="ML")
-    lratio <- 2 * abs(diff(c(lm.one$logLik, lm.two$logLik)))
-    results$l.ratio[i] <- lratio
-    results$p.value[i] <- 1 - pchisq(lratio, lm.one$fixDF$X[2] - lm.two$fixDF$X[2])
-
+      
+    l1 <- try(lm.one <- lme(model.one, random=r.effect, method="ML"))
+    l2 <- try(lm.two <- lme(model.two, random=r.effect, method="ML"))
+    if (!inherits(l1, "try-error") && !inherits(l2, "try-error")) {
+      lratio <- 2 * abs(diff(c(lm.one$logLik, lm.two$logLik)))
+      results$l.ratio[i] <- lratio
+      results$p.value[i] <- 1 - pchisq(lratio, lm.one$fixDF$X[2] - lm.two$fixDF$X[2])
+    }
+    else {
+      results$l.ratio[i] <- 0
+      results$p.value[i] <- 1
+    }
     
 #    lm.one <- lme(y ~ Age, random=r.effect, method="ML")
 #    lm.two <- lme(y ~ Age + I(Age^2), random=r.effect, method="ML")
