@@ -13,6 +13,16 @@ mni.read.glim.file <- function(filename, header=FALSE, fill=FALSE,
   return(glim)
 }
 
+# run a normal model from beginning to end
+mni.statistical.run <- function(input, model, output, header=FALSE, fill=FALSE) {
+  gf <- mni.read.glim.file(input, header, fill)
+  dt <- mni.build.data.table(gf)
+  ms <- mni.mean.statistics(gf, model, dt)
+  vs <- mni.vertex.statistics(gf, model, dt)
+  mni.write.vertex.stats(vs, output, mean.stats=ms, glim.matrix=gf)
+  #return(list(gf=gf, ms=ms, vs=vs, dt=dt))
+}
+
 # run statistics on the mean of all the files included in the glim model.
 mni.mean.statistics <- function(glim.matrix, statistics.model=NA,
                                 vertex.table=FALSE) {
