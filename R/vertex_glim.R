@@ -188,6 +188,34 @@ mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
 }
 
 
+# test for homoscedasticity (I love that word)
+mni.vertex.homoscedasticity <- function(glim.matrix, model, grouping,
+                                        vertex.table) {
+  number.vertices <- nrow(vertex.table)
+  l.ratio <- vector(length=number.vertices)
+
+  attach(glim.matrix)
+
+  modulo <- 100
+  
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+    gls1 <- gls(formula(model))
+    gls2 <- gls(formula(model), weights = varIdent(form = formula(grouping)))
+    l.ratio[i] <- 2 * abs(diff(c(logLik(gls1), logLik(gls2))))
+    
+    # print progress report to the terminal
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+
+  return(l.ratio)
+}
+
+
 # compare two different models at each vertex using an anova
 mni.vertex.mixed.model.compare.models <- function(glim.matrix,
                                                   model.one,
@@ -449,8 +477,12 @@ mni.vertex.correlation <- function(data.table, y) {
   return(results)
 }
 
+# a variance test between two subsets. Optionally computes the
+# variance in a robust fashion using bootstrap sampling of the
+# residuals. To enable this set the bootstrap argument to be the ratio
+# of the data's length to be sampled each time.
 mni.vertex.var.test <- function(glim.matrix, statistics.model, subset1,
-                               subset2, vertex.table) {
+                               subset2, vertex.table, bootstrap=NULL) {
 
   number.subjects <- nrow(glim.matrix)
   number.vertices <- nrow(vertex.table)
@@ -461,14 +493,39 @@ mni.vertex.var.test <- function(glim.matrix, statistics.model, subset1,
   attach(glim.matrix)
   modulo <- 1000
 
+  if(! is.null(bootstrap)) { # some variables for robust variance estimation
+    m <- 100
+    res <- numeric(m)
+  }
+
   for (i in 1:number.vertices) {
     y <- vertex.table[i,]
     l1 <- lm(formula(statistics.model), glim.matrix, subset=subset1)
     l2 <- lm(formula(statistics.model), glim.matrix, subset=subset2)
-    v <- var.test(l1, l2)
-    variance.ratio[i] <- v$estimate
-    f.stat[i] <- v$statistic
-    p.value[i] <- v$p.value
+
+    if (is.null(bootstrap)) { #default estimation of variance
+      v <- var.test(l1, l2)
+      variance.ratio[i] <- v$estimate
+      f.stat[i] <- v$statistic
+      p.value[i] <- v$p.value
+    }
+    else { # more robust estimation of variance
+      res1 <- resid(l1)
+      res2 <- resid(l2)
+      for (v in 1:m) res[v] <- var(sample(res1,
+                                          size=round(length(res1 / bootstrap)),
+                                          replace=T))
+      var1 <- median(res)
+      for (v in 1:m) res[v] <- var(sample(res2,
+                                          size=round(length(res2 / bootstrap)),
+                                          replace=T))
+      var2 <- median(res)
+      vr <- var1 / var2
+      variance.ratio[i] <- vr
+      f.stat[i] <- vr
+      p.value[i] <- 0
+    }
+
     # print progress report to the terminal
     if (i %% modulo == 0) {
       cat(format((i/number.vertices)*100, digits=3))
