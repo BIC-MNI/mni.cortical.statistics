@@ -1,0 +1,10 @@
+%product mni-cortical-statistics
+%copyright 2003-2004 Jason Lerch
+%vendor McConnell Brain Imaging Centre
+%packager Jason Lerch <jason@bic.mni.mcgill.ca>
+%license LICENSE
+%readme README
+%description Statistics on vertstats files
+%version 0.9.0
+%requires r-base
+%requires r-recommended
