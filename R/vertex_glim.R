@@ -177,6 +177,62 @@ mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
   return(results)
 }
 
+mni.vertex.mixed.model.anova <- function(glim.matrix, fixed.effect, random.effect,
+                                   vertex.table=FALSE) {
+  # build the table to hold all of the values - unless they are given as
+  # an argument
+  if (mode(vertex.table) == "logical") {
+    vertex.table <- mni.build.data.table(glim.matrix)
+  }
+
+  number.vertices <- nrow(vertex.table)
+
+  attach(glim.matrix)
+  # get the number of terms
+  y <- vertex.table[1,]
+  l <- lme(formula(fixed.effect), random=formula(random.effect))
+  a <- anova(l)
+
+  number.terms <- nrow(a)
+
+  variable.names <- rownames(a)
+  # remove the parentheses around the intercept term, as it is ugly when
+  # written to file
+  variable.names <- gsub('\[\(\)]', '', variable.names, perl=TRUE)
+
+  # construct the output matrices
+  f.stats <- matrix(data=0, nrow=number.vertices, ncol=number.terms)
+
+  modulo <- 500
+  fe <- formula(fixed.effect)
+  re <- formula(random.effect)
+  # run the model at each vertex
+  cat("    Percent done: ")
+  for (v in 1:number.vertices) {
+    y <- vertex.table[v,]
+    a = try(anova(lme(fe, random=re))$"F-value")
+
+    # catch errors and blythely ignore them
+    if (!inherits(a, "try-error")) {
+      f.stats[v,] <- a
+    }
+
+    # print progress report to the terminal
+    if (v %% modulo == 0) {
+      cat(format((v/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+
+  # assign the correct names
+  colnames(f.stats) <- variable.names
+
+  # create the output frame
+  results <- list(f.stats=f.stats)
+  return(results)
+}
+
 # run an anova at every vertex
 mni.vertex.anova <- function(glim.matrix, statistics.model=NA,
                              vertex.table=FALSE) {
