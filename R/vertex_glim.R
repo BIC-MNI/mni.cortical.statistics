@@ -187,6 +187,51 @@ mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
   return(results)
 }
 
+
+# compare two different models at each vertex using an anova
+mni.vertex.mixed.model.compare.models <- function(glim.matrix,
+                                                  model.one,
+                                                  model.two,
+                                                  random.effect,
+                                                  vertex.table) {
+  number.subjects <- nrow(glim.matrix)
+  number.vertices <- nrow(vertex.table)
+
+  # for debugging only
+  #number.vertices <- 10
+
+  #attach(glim.matrix)
+  
+  results <- list(l.ratio = vector(length=number.vertices),
+                  p.value = vector(length=number.vertices))
+                  
+  
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+
+    model.one <- formula(model.one)
+    model.two <- formula(model.two)
+    r.effect <- formula(random.effect)
+
+    lm.one <- lme(model.one, random=r.effect, method="ML")
+    lm.two <- lme(model.two, random=r.effect, method="ML")
+    lratio <- 2 * abs(diff(c(lm.one$logLik, lm.two$logLik)))
+    results$l.ratio[i] <- lratio
+    results$p.value[i] <- 1 - pchisq(lratio, lm.one$fixDF$X[2] - lm.two$fixDF$X[2])
+
+    
+#    lm.one <- lme(y ~ Age, random=r.effect, method="ML")
+#    lm.two <- lme(y ~ Age + I(Age^2), random=r.effect, method="ML")
+#    a <- anova.lme(lm.one, lm.two)
+#    results$l.ratio[i] <- a[2,8]
+#    results$p.value[i] <- a[2,9]
+
+    
+  }
+  return(results)
+}
+
+
 mni.vertex.mixed.model.anova <- function(glim.matrix, fixed.effect,
                                          random.effect, vertex.table=FALSE) {
   # build the table to hold all of the values - unless they are given as
@@ -362,6 +407,27 @@ mni.vertex.correlation.strength <- function(data.table) {
   cat("\n")
   return(results)
 }
+
+# run a permutation test for significance of correlation
+mni.vertex.correlation.permutation <- function(data.table, y, groups, num=100) {
+
+  number.subjects <- ncol(data.table)
+  results <- vector(length=num)
+  for (i in 1:num) {
+    g <- sample(groups)
+    c1 <- mni.vertex.correlation(data.table[,g==levels(g)[1]],
+                                 y[g==levels(g)[1]])
+    c2 <- mni.vertex.correlation(data.table[,g==levels(g)[3]],
+                                 y[g==levels(g)[3]])
+    results[i] <- min(c1-c2)
+
+    cat("Permutation: ")
+    cat(i)
+    cat("\n")
+  }
+  return(results)
+}
+  
 
 # correlate every vertex with variable y
 mni.vertex.correlation <- function(data.table, y) {
