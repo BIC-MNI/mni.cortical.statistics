@@ -111,9 +111,13 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
   number.subjects <- nrow(glim.matrix)
   # number of vertices. Assume that they are all the same, so just read it
   # off the first subject.
-  number.vertices <-
-    length(as.matrix(read.table(as.character(glim.matrix[1,1]))))
-
+  if (mode(vertex.table) != "logical") {
+    number.vertices <- nrow(vertex.table)
+  }
+  else {
+    number.vertices <-
+      length(as.matrix(read.table(as.character(glim.matrix[1,1]))))
+  }
 
   # build the table to hold all of the values - unless they are given as
   # an argument
@@ -149,15 +153,13 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
                   std.error = data.frame(matrix(NA, nrow = number.vertices,
                     ncol = number.terms)),
                   tstatistic = data.frame(matrix(NA, nrow = number.vertices,
-                    ncol = number.terms)),
-                  q.values = data.frame(matrix(NA, nrow = number.vertices,
                     ncol = number.terms)))
+   
 
   # assign the correct names
   names(results$slope) <- variable.names
   names(results$std.error) <- variable.names
   names(results$tstatistic) <- variable.names
-  names(results$q.values) <- variable.names
 
   modulo <- 1000
   f <- formula(statistics.model)
@@ -184,12 +186,12 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
   cat("\n")
 
   # compute the q values for all of the corresponding t-stats
-  cat("   Computing q values\n")
-  for (i in 1:number.terms) {
-    q <- mni.compute.FDR(t.stats=results$tstatistic[,i],
-                         df=number.subjects-1)
-    results$q.values[,i] <- q$q
-  }
+  #cat("   Computing q values\n")
+  #for (i in 1:number.terms) {
+  #  q <- mni.compute.FDR(t.stats=results$tstatistic[,i],
+  #                       df=number.subjects-1)
+  #  results$q.values[,i] <- q$q
+  #}
   
   return(results)
 
