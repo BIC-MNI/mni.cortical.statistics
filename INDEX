@@ -1,0 +1,5 @@
+mni.mean.statistics     Run a linear model on the average of a series
+                        of cortical stats files
+mni.read.glim.file      Read Linear Model Matrix Text File
+mni.vertex.statistics   Run a linear model at every vertex of a series
+                        of cortical stats files
