@@ -1,5 +1,15 @@
-mni.read.glim.file <- function(filename, header=FALSE, fill=FALSE) {
-  glim <- as.data.frame(read.table(filename, header=header, fill=fill))
+mni.read.glim.file <- function(filename, header=FALSE, fill=FALSE,
+                               file.type="space") {
+  glim <- NULL
+  if(file.type == "space") {
+    glim <- as.data.frame(read.table(filename, header=header, fill=fill))
+  }
+  else if (file.type == "csv") {
+    glim <- as.data.frame(read.csv(filename, header=header, fill=fill))
+  }
+  else {
+    stop("File type must be either space or csv")
+  }
   return(glim)
 }
 
@@ -103,7 +113,121 @@ mni.vertex.compare.models <- function(glim.matrix, model.one,
   }
   return(results)
 }
+
+# run a mixed effects model at every vertex
+mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
+                                   vertex.table=FALSE) {
+  # build the table to hold all of the values - unless they are given as
+  # an argument
+  if (mode(vertex.table) == "logical") {
+    vertex.table <- mni.build.data.table(glim.matrix)
+  }
+
+  number.vertices <- nrow(vertex.table)
+
+  attach(glim.matrix)
+  # get the number of terms
+  y <- vertex.table[1,]
+  l <- lme(formula(fixed.effect), random=formula(random.effect))
+  s <- summary(l)$tTable
+
+  number.terms <- nrow(s)
+
+  variable.names <- rownames(s)
+  # remove the parentheses around the intercept term, as it is ugly when
+  # written to file
+  variable.names <- gsub('\[\(\)]', '', variable.names, perl=TRUE)
+
+  # construct the output matrices
+  value <- matrix(data=0, nrow=number.vertices, ncol=number.terms)
+  std.error <- matrix(data=0, nrow=number.vertices, ncol=number.terms)
+  t.value <- matrix(data=0, nrow=number.vertices, ncol=number.terms)
+
+  modulo <- 500
+  fe <- formula(fixed.effect)
+  re <- formula(random.effect)
+  # run the model at each vertex
+  cat("    Percent done: ")
+  for (v in 1:number.vertices) {
+    y <- vertex.table[v,]
+    s = try(summary(lme(fe, random=re))$tTable)
+
+    # catch errors and blythely ignore them
+    if (!inherits(s, "try-error")) {
+      value[v,] <- s[,1]
+      std.error[v,] <- s[,2]
+      t.value[v,] <- s[,4]
+    }
+
+    # print progress report to the terminal
+    if (v %% modulo == 0) {
+      cat(format((v/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+
+  # assign the correct names
+  colnames(value) <- variable.names
+  colnames(std.error) <- variable.names
+  colnames(t.value) <- variable.names
+
+  # create the output frame
+  results <- list(value=value, std.error=std.error, t.value=t.value)
+  return(results)
+}
+
+# run an anova at every vertex
+mni.vertex.anova <- function(glim.matrix, statistics.model=NA,
+                             vertex.table=FALSE) {
+  # build the table to hold all of the values - unless they are given as
+  # an argument
+  if (mode(vertex.table) == "logical") {
+    vertex.table <- mni.build.data.table(glim.matrix)
+  }
+
+  number.subjects <- nrow(glim.matrix)
+  number.vertices <- nrow(vertex.table)
+
+  # attach the named variables
+  attach(glim.matrix)
+
+  # get the number of terms in the formula
+  # run one anova.
+  y <- vertex.table[1,]
+  a <- aov(formula(statistics.model))
+  s <- summary(a)
+
+  variable.names <- rownames(s[[1]])
+  # remove the residuals term
+  variable.names <- variable.names[-(length(variable.names))]
+  number.terms <- length(variable.names)
   
+  #create the output table holding the F statistics
+  results <- matrix(data=NA, nrow=number.vertices, ncol=number.terms)
+
+  modulo <- 1000
+  f <- formula(statistics.model)
+
+  # run the anova at each vertex
+  cat("    Percent done: ")
+  for (v in 1:number.vertices) {
+    y <- vertex.table[v,]
+    s <- summary(aov(f))
+    results[v,] <- s[[1]]$"F value"[1:number.terms]
+    # print progress report to the terminal
+    if (v %% modulo == 0) {
+      cat(format((v/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+  colnames(results) <- variable.names
+
+  return(results)
+}
+
+
 # run stats at every vertex
 mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
                                   vertex.table=FALSE) {
@@ -243,8 +367,29 @@ mni.write.vertex.stats <- function(vertex.stats, filename, headers = TRUE,
   write.table(vertex.stats, file = filename, append = append.file,
               quote = FALSE, row.names = FALSE, col.names = headers)
 }
-  
 
+# read a single vertstats column from file
+mni.read.vertstats.column <- function(filename, column.name=NULL) {
+
+  # by name
+  if (is.null(column.name)) {
+    # default name is equal to the first column
+    column.name = "Column0"
+  }
+
+  # there is a bug in vertstats_extract, causing it to have one too many
+  # values at the end - so this is a temporary fix. Ick!
+  return.val <- as.numeric( system( paste("vertstats_extract", filename,
+                                    column.name), intern=TRUE))
+  l <- length(return.val)
+  if (l == 40963) {
+    return.val <- return.val[1:l-1]
+  }
+  return(return.val)
+}
+
+    
+  
 mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, filename=NULL,
                             column.name=NULL,
                             df=Inf, fdr=0.05, plot.fdr=FALSE) {
