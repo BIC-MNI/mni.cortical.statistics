@@ -1,3 +1,47 @@
+
+
+# Levene's test for equality of variances - adapted from code
+# submitted to the R list by Brian Ripley
+levene.test <- function(y, group, func=mean, ...) {
+  group <- as.factor(group) # precautionary
+
+  #if (!is.null(trim) && func != mean) {
+  #  stop("Error: if trim is specified, function has to be mean")
+  #}
+  
+  meds <- tapply(y, group, func, ...) 
+  resp <- abs(y - meds[group]) 
+  anova(lm(resp ~ group))[1, 4:5] 
+} 
+
+mni.vertex.levene.test <- function(gf, statistics.model, grouping, vertex.table,
+                                   mean.func=median, ...) {
+  number.vertices <- nrow(vertex.table)
+  attach(gf)
+
+  modulo <- 1000
+
+  f.stats <- vector(length=number.vertices)
+  p.values <- vector(length=number.vertices)
+  
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+    resids <- resid(lm(formula(statistics.model)))
+    lt <- levene.test(resids, grouping, mean.func, ...)
+    f.stats[i] <- lt$"F value"
+    p.values[i] <- lt$"Pr(>F)"
+    # print progress report to the terminal
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+  return(data.frame(f.stats, p.values))
+}
+
+
+
 mni.read.glim.file <- function(filename, header=FALSE, fill=FALSE,
                                file.type="space") {
   glim <- NULL
