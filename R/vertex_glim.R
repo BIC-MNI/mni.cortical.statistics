@@ -107,6 +107,7 @@ mni.vertex.compare.models <- function(glim.matrix, model.one,
 # run stats at every vertex
 mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
                                   vertex.table=FALSE) {
+
   # number of rows in the matrix
   number.subjects <- nrow(glim.matrix)
   # number of vertices. Assume that they are all the same, so just read it
@@ -156,34 +157,42 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
                     ncol = number.terms)))
    
 
-  # assign the correct names
-  names(results$slope) <- variable.names
-  names(results$std.error) <- variable.names
-  names(results$tstatistic) <- variable.names
+  slope <- matrix(data=NA, nrow=number.vertices, ncol=number.terms)
+  tstats <- matrix(data=NA, nrow=number.vertices, ncol=number.terms)
+  stderr <- matrix(data=NA, nrow=number.vertices, ncol=number.terms)
 
   modulo <- 1000
   f <- formula(statistics.model)
 
   # run the stats at each vertex
   cat("   Percent done: ")
-  for (i in 1:number.vertices) {
-    y <- vertex.table[i,]
+  for (v in 1:number.vertices) {
+    y <- vertex.table[v,]
     s = summary(lm(f))
-    results$adj.r.squared[i] <- s$adj.r.squared
-    results$fstatistic[i] <- s$fstatistic[1]
-    results$intercept[i] <- s$coefficients[1,1]
-    for (j in 1:number.terms) {
-      results$slope[i,j] <- s$coefficients[j,1]
-      results$std.error[i,j] <- s$coefficients[j,2]
-      results$tstatistic[i,j] <- s$coefficients[j,3]
-    }
+    results$adj.r.squared[v] <- s$adj.r.squared
+    results$fstatistic[v] <- s$fstatistic[1]
+    results$intercept[v] <- s$coefficients[1,1]
+
+    slope[v,] <- s$coefficients[,1]
+    stderr[v,] <- s$coefficients[,2]
+    tstats[v,] <- s$coefficients[,3]
+    
     # print progress report to the terminal
-    if (i %% modulo == 0) {
-      cat(format((i/number.vertices)*100, digits=3))
+    if (v %% modulo == 0) {
+      cat(format((v/number.vertices)*100, digits=3))
       cat("%  ")
     }
   }
   cat("\n")
+
+  results$slope = slope
+  results$std.error = stderr
+  results$tstatistic = tstats
+
+  # assign the correct names
+  colnames(results$slope) <- variable.names
+  colnames(results$std.error) <- variable.names
+  colnames(results$tstatistic) <- variable.names
 
   # compute the q values for all of the corresponding t-stats
   #cat("   Computing q values\n")
@@ -192,7 +201,7 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
   #                       df=number.subjects-1)
   #  results$q.values[,i] <- q$q
   #}
-  
+
   return(results)
 
 }
