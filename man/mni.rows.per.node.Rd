@@ -18,3 +18,4 @@ mni.rows.per.node(n.rows, n.nodes)
   corresponding to the lower index and the second to the higher index
   into the datatable that is to be used by each process.
 }
+\keyword{programming}

@@ -8,7 +8,7 @@
 }
 \usage{
 mni.compute.FDR(t.stats=NULL, p.values=NULL, filename=NULL,
-                column.names=NULL, df=Inf, fdr=0.05, plot.fdr=FALSE) 
+                column.name=NULL, df=Inf, fdr=0.05, plot.fdr=FALSE) 
 }
 \arguments{
   \item{t.stats}{An array of t-statistics.}

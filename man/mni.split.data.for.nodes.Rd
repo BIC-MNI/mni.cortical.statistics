@@ -21,3 +21,4 @@ mni.split.data.for.nodes(data.table, node.setup, directory)
   \code{\link{mni.build.data.table}}.
   \code{\link{mni.rows.per.node}}.
 }
+\keyword{programming}

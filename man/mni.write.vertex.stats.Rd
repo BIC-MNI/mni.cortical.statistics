@@ -7,7 +7,7 @@
   the file format.
 }
 \usage{
-mni.write.vertex.stats(vertex.stats, "filename.vertstats", headers=TRUE,
+mni.write.vertex.stats(vertex.stats, "filename", headers=TRUE,
 mean.stats=ms, glim.matrix=gm)
 }
 \arguments{

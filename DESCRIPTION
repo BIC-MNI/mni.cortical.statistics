@@ -1,6 +1,6 @@
 Package: mni.cortical.statistics
-Version: 0.7.1
-Date: 2003-09-26
+Version: 0.8.0
+Date: 2004-03-15
 Title: Regression analyses on the surface
 Author: Jason Lerch <jason@bic.mni.mcgill.ca>
 Maintainer: Jason Lerch <jason@bic.mni.mcgill.ca>
@@ -8,4 +8,4 @@ Depends: R (>= 1.5.0)
 Description: Performs general linear model regressions in a similar
  vein to voxel based morphometry, but on the surface instead.
 License: GPL version 2 or newer
-URL: http://www.bic.mni.mcgill.ca/software
+URL: http://www.bic.mni.mcgill.ca/~jason/cortex
