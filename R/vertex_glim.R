@@ -234,12 +234,33 @@ mni.write.vertex.stats <- function(vertex.stats, filename, headers = TRUE,
 }
   
 
-mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, df=Inf, fdr=0.05,
-                            plot.fdr=FALSE) {
+mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, filename=NULL,
+                            column.name=NULL,
+                            df=Inf, fdr=0.05, plot.fdr=FALSE) {
   # argument handling: must have either t.stats or p.values
-  if (is.null(t.stats) && is.null(p.values)) {
+  if (is.null(t.stats) && is.null(p.values) && is.null(filename)) {
     stop("Either t.stats or p.values have to be specified")
   }
+  if (! is.null(filename)) {
+    if (is.null(column.name)) {
+      data.headers <- gsub(' +', '', system(paste("vertstatsinfo -dataheaders",
+                                                  filename), intern=TRUE),
+                           perl=TRUE)
+      cat(" Column Names of t-statistics: \n\n")
+      data.headers <- data.headers[grep('tstatistic', data.headers)]
+      print(data.headers)
+      cat("\n")
+      stop("Specify a column name with the file name, see choices above")
+    }
+    # get the actual stats
+    t.stats <- as.numeric(system(paste("vertstats_extract", filename,
+                                       column.name),
+                                 intern=TRUE))
+  }
+                        
+      
+      
+        
   if (is.null(p.values)) {
     # compute the p-values from the t-stats
     p.values <- abs(pt(abs(t.stats), df) - 1)

@@ -1,6 +1,6 @@
 Package: mni.cortical.statistics
-Version: 0.7
-Date: 2003-07-04
+Version: 0.7.1
+Date: 2003-09-26
 Title: Regression analyses on the surface
 Author: Jason Lerch <jason@bic.mni.mcgill.ca>
 Maintainer: Jason Lerch <jason@bic.mni.mcgill.ca>
