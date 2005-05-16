@@ -32,43 +32,73 @@ mni.diagnostic.capabilities.of.vertices <- function(data.table, true.diagnosis, 
   number.cases <- length(true.diagnosis)
   number.vertices <- nrow(data.table)
   results <- matrix(NA, ncol=number.cases, nrow=number.vertices)
-  modula <- 0
+  modulo <- 1000
   for (i in 1:number.vertices) {
     try(results[i,] <- mni.leave.one.out.diagnosis(data.table[i,], true.diagnosis, method=method))
 
-    tmp <- i %/% 1000
-    if (tmp > modula) {
-      print((i / number.vertices) * 100)
-      modula <- tmp
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
     }
+  }
+  return(results)
+}
+
+mni.vertex.diagnostic.permutation <- function(data.table, true.diagnosis,
+                                              num=100, method="lda") {
+  number.subjects <- ncol(data.table)
+  results <- vector(length=num)
+
+
+  for (i in 1:num) {
+    cat("Permutation: ")
+    cat(i)
+    cat("\n")
+    
+    g <- sample(true.diagnosis)
+    d <- mni.diagnostic.capabilities.of.vertices(data.table, g,
+                                                 method)
+    a <- mni.vertex.sensitivity(d, g)$accuracy
+    results[i] <- max(a[!is.na(a)])
+
   }
   return(results)
 }
 
 mni.vertex.sensitivity <- function(diagnostic.results, true.diagnosis) {
   number.vertices = nrow(diagnostic.results)
-  results <- list(sensitivity = vector(length=number.vertices),
-                  specificity = vector(length=number.vertices),
-                  ppv = vector(length=number.vertices),
-                  npv = vector(length=number.vertices),
-                  accuracy = vector(length=number.vertices))
+  sensitivity <-  vector(length=number.vertices)
+  specificity <- vector(length=number.vertices)
+  ppv <- vector(length=number.vertices)
+  npv <- vector(length=number.vertices)
+  accuracy <- vector(length=number.vertices)
   modula <- 0
   for (i in 1:number.vertices) {
-    t <- try(as.data.frame(table(diagnostic.results[i,], true.diagnosis)))
-    if (!inherits(t, "try-error")) {
-      results$sensitivity[i] <- t[4,3] / (t[4,3] + t[3,3])
-      results$specificity[i] <- t[1,3] / (t[1,3] + t[2,3])
-      results$ppv[i] <- t[4,3] / (t[4,3] + t[2,3])
-      results$npv[i] <- t[1,3] / (t[1,3] + t[3,3])
-      results$accuracy[i] <- (t[4,3] + t[1,3]) / (t[1,3] + t[2,3] + t[3,3] + t[4,3])
-    }
-    tmp <- i %/% 1000
-    if (tmp > modula) {
-      print((i / number.vertices) * 100)
-      modula <- tmp
+    t <- try(table(diagnostic.results[i,], true.diagnosis))
+    #print(i)
+    #print(t)
+    if (! inherits(t, "try-error") & nrow(t) == 2 & ncol(t) == 2) {
+      accuracy[i] <- (t[1,1] + t[2,2]) / sum(t)
+      specificity[i] <- t[1,1] / ( t[1,1] + t[2,1])
+      sensitivity[i] <- t[2,2] / (t[2,2] + t[1,2])
     }
   }
-  return(results)
+#     t <- try(as.data.frame(table(diagnostic.results[i,], true.diagnosis)))
+#     if (!inherits(t, "try-error")) {
+#       sensitivity[i] <- t[4,3] / (t[4,3] + t[3,3])
+#       specificity[i] <- t[1,3] / (t[1,3] + t[2,3])
+#       ppv[i] <- t[4,3] / (t[4,3] + t[2,3])
+#       npv[i] <- t[1,3] / (t[1,3] + t[3,3])
+#       accuracy[i] <- (t[4,3] + t[1,3]) / (t[1,3] + t[2,3] + t[3,3] + t[4,3])
+#    }
+ #   tmp <- i %/% 1000
+ #   if (tmp > modula) {
+ #     print((i / number.vertices) * 100)
+ #     modula <- tmp
+ #   }
+ # }
+  return(list(accuracy=accuracy, sensitivity=sensitivity,
+              specificity=specificity))
 }
 
 mni.stepwise.diagnostics <- function(diagnostic.results, true.diagnosis,

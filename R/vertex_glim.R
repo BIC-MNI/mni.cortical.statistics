@@ -231,6 +231,42 @@ mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
   return(results)
 }
 
+# General Least Squares with error varying by group
+mni.vertex.gls <- function(glim.matrix, model, grouping, vertex.table) {
+  number.vertices <- nrow(vertex.table)
+
+  attach(glim.matrix)
+
+  # test the number of t-stats results in this particular test
+  y <- vertex.table[1,]
+  gls1 <- gls(formula(model), weights = varIdent(form = formula(grouping)))
+  ts <- summary(gls1)$tTable
+  # set up the matrix to hold the results
+  tstatistic <- matrix(nrow=number.vertices, ncol=nrow(ts))
+  values <- matrix(nrow=number.vertices, ncol=nrow(ts))
+  errors <- matrix(nrow=number.vertices, ncol=nrow(ts))
+  colnames(tstatistic) <- rownames(ts)
+  colnames(values) <- rownames(ts)
+  colnames(errors) <- rownames(ts)
+  
+  modulo <- 1000
+  for (i in 1:number.vertices) {
+    y <- vertex.table[i,]
+    gls1 <- gls(formula(model), weights = varIdent(form = formula(grouping)))
+    ts <- summary(gls1)$tTable
+    tstatistic[i,] <- ts[,3]
+    values[i,] <- ts[,1]
+    errors[i,] <- ts[,2]
+    # print progress report to the terminal
+    if (i %% modulo == 0) {
+      cat(format((i/number.vertices)*100, digits=3))
+      cat("%  ")
+    }
+  }
+  cat("\n")
+  return(data.frame(values=values, std.error=errors, tstatistic=tstatistic))
+}
+    
 
 # test for homoscedasticity (I love that word)
 mni.vertex.homoscedasticity <- function(glim.matrix, model, grouping,
