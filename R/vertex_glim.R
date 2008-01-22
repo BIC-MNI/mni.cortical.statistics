@@ -840,7 +840,7 @@ mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, filename=NULL,
         
   if (is.null(p.values)) {
     # compute the p-values from the t-stats
-    p.values <- abs(pt(abs(t.stats), df) - 1)
+    p.values <- (abs(pt(abs(t.stats), df) - 1)) *2
   }
   # sort the p-values
   sorted.p.values <- sort(p.values, index.return = TRUE)
@@ -853,7 +853,7 @@ mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, filename=NULL,
   # find the threshold
   q2 <- q <= fdr
   r <- sort(q2, decreasing = TRUE, index.return = TRUE)
-  fdr.threshold <- qt(sorted.p.values$x[max(r$ix[r$x == TRUE])], df)
+  fdr.threshold <- qt((sorted.p.values$x[max(r$ix[r$x == TRUE])])/2, df)
   # sort the q values to be in the same order as the t.stats passed in
   q[sorted.p.values$ix] <- q
   # return threshold and q values.
