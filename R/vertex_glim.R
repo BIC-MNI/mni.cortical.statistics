@@ -128,18 +128,18 @@ mni.vertex.power.analysis <- function(std.file, n=25, alpha=0.005,
 }
 
 # build a table for all the entries in each file
-mni.build.data.table <- function(glim.matrix) {
+mni.build.data.table <- function(glim.matrix, column=1) {
   # number of rows in the matrix
   number.subjects <- length(glim.matrix[,1])
   # number of vertices. Assume that they are all the same, so just read it
   # off the first subject.
   number.vertices <-
-    length(as.matrix(read.table(as.character(glim.matrix[1,1]))))
+    length(as.matrix(read.table(as.character(glim.matrix[1,column]))))
 
   # build the table to hold all of the values
   vertex.table <- matrix(NA, nrow = number.vertices, ncol = number.subjects)
   for (i in 1:number.subjects) {
-    vertex.table[,i] <- as.matrix(read.table(as.character(glim.matrix[i,1])))
+    vertex.table[,i] <- as.matrix(read.table(as.character(glim.matrix[i,column])))
   }
   return(vertex.table)
 }
@@ -190,7 +190,7 @@ mni.vertex.mixed.model <- function(glim.matrix, fixed.effect, random.effect,
   variable.names <- rownames(s)
   # remove the parentheses around the intercept term, as it is ugly when
   # written to file
-  variable.names <- gsub('\[\(\)]', '', variable.names, perl=TRUE)
+  variable.names <- gsub('\\[\\(\\)]', '', variable.names, perl=TRUE)
 
   # construct the output matrices
   value <- matrix(data=0, nrow=number.vertices, ncol=number.terms)
@@ -367,7 +367,7 @@ mni.vertex.mixed.model.anova <- function(glim.matrix, fixed.effect,
   variable.names <- rownames(a)
   # remove the parentheses around the intercept term, as it is ugly when
   # written to file
-  variable.names <- gsub('\[\(\)]', '', variable.names, perl=TRUE)
+  variable.names <- gsub('\\[\\(\\)]', '', variable.names, perl=TRUE)
 
   # construct the output matrices
   f.stats <- matrix(data=0, nrow=number.vertices, ncol=number.terms)
@@ -687,7 +687,7 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
   variable.names <- row.names(s$coefficients)
   # remove the parentheses around the intercept term, as it is ugly when
   # written to file
-  variable.names <- gsub('\[\(\)]', '', variable.names, perl=TRUE)
+  variable.names <- gsub('\\[\\(\\)]', '', variable.names, perl=TRUE)
   number.terms <- length(variable.names)
 
   # create the output table
@@ -746,7 +746,7 @@ mni.vertex.statistics <- function(glim.matrix, statistics.model=NA,
   #                       df=number.subjects-1)
   #  results$q.values[,i] <- q$q
   #}
-
+  detach(glim.matrix)
   return(results)
 
 }
