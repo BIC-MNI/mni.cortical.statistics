@@ -857,7 +857,7 @@ mni.compute.FDR <- function(t.stats=NULL, p.values=NULL, filename=NULL,
   # sort the q values to be in the same order as the t.stats passed in
   q[sorted.p.values$ix] <- q
   # return threshold and q values.
-  return(fdr.threshold, q)
+  return(list(fdr.threshold=fdr.threshold, q=q))
 }
   
   
